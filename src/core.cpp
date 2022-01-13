@@ -6,7 +6,7 @@
 #include <string>
 #include <cmath> //#include <math.h>
 #include <thread>
-#include <cstring>//for memset?
+// #include <cstring>//for memset? no
 
 #if defined(_WIN32) && !defined(_XBOX)
 #include <windows.h>
@@ -121,7 +121,6 @@ static struct retro_rumble_interface rumble;
 void retro_set_environment(retro_environment_t cb)
 {
     environ_cb = cb;
-    log_cb(RETRO_LOG_INFO, "Just a test :)\n");
 
     if (cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging)) {
         log_cb = logging.log;
@@ -134,6 +133,8 @@ void retro_set_environment(retro_environment_t cb)
         teststring += "(): Using fallback logging functionality.\n";
         log_cb(RETRO_LOG_WARN, teststring.data());
     }
+
+    log_cb(RETRO_LOG_INFO, "Just a test, AFTER initializing log_cb o-o'\n");
 
     static const struct retro_controller_description controllers[] = {
        { "Nintendo DS", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0) },    //edit if you need keyboard or mouse

@@ -1,5 +1,11 @@
 # InnoLab-Raspberry-Pi-Arcade-Game
 
+cmake -S . -B out/build/windows/
+MSBuild.exe out/build/windows/INNOCore3.sln
+
+
+
+
 compiling under windows in visual studio code
     start in src directory
     configure cmake:
