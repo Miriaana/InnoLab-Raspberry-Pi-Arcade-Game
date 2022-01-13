@@ -1,3 +1,3 @@
 # InnoLab-Raspberry-Pi-Arcade-Game
 
-test :3
+test :D
