@@ -1,6 +1,6 @@
 #ignored directories
-out/build/linux/
-out/build/windows/
+# out/build/linux/
+# out/build/windows/
 
 #cmake
 CMakeLists.txt.user
