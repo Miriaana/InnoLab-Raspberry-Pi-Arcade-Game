@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\Miriam\Documents\FHTW\3.Sem_2021\INNO1\InnoLab-Raspberry-Pi-Arcade-Game\out\build\windows\x64\Debug\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\Miriam\Documents\FHTW\3.Sem_2021\INNO1\InnoLab-Raspberry-Pi-Arcade-Game\out\build\windows\Debug\InnoLab_Core.dll</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

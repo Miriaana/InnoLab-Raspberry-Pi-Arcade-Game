@@ -1,0 +1,10 @@
+^C:\USERS\MIRIAM\DOCUMENTS\FHTW\3.SEM_2021\INNO1\INNOLAB-RASPBERRY-PI-ARCADE-GAME\SRC\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Miriam/Documents/FHTW/3.Sem_2021/INNO1/InnoLab-Raspberry-Pi-Arcade-Game/src -BC:/Users/Miriam/Documents/FHTW/3.Sem_2021/INNO1/InnoLab-Raspberry-Pi-Arcade-Game/out/build/windows --check-stamp-file C:/Users/Miriam/Documents/FHTW/3.Sem_2021/INNO1/InnoLab-Raspberry-Pi-Arcade-Game/out/build/windows/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
