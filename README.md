@@ -18,4 +18,5 @@ compiling under linux
         make
     install(copy) core to zB. retroarch core folder
         cmake --install . --config Debug --prefix "/mnt/c/RetroArch-Win64/downloads/INNOCore"
+        # cmake --install . --config Debug --prefix "/home/miriam/.config/retroarch/downloads/"
 
