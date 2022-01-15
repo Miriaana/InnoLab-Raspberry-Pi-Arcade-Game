@@ -2,6 +2,8 @@
 
 cmake -S . -B out/build/windows/
 MSBuild.exe out/build/windows/INNOCore3.sln
+cmake --install out/build/windows/ --config Debug --prefix "C:/RetroArch-Win64/downloads/INNOCore"
+C:\RetroArch-Win64\retroarch --menu -v
 
 ubuntu:
 cmake -S . -B out/build/linux/

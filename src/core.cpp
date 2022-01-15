@@ -352,42 +352,40 @@ such as soft-patching to work correctly.
 
 void retro_run(void)
 {
-    /*
-    log_cb(RETRO_LOG_INFO, "first 4 pixels are:\n");
-    for (int j = 0; j < 4*4; j++) {
-        if (j % 4 == 0) {
-            fprintf(stderr, "%d:", j/4 + 1);
-        }
-        fprintf(stderr, "\t%d", frame_buf[j]);
-        if ((j+1) % 4 == 0)
-            fprintf(stderr, "\n\n");
-    }*/
-    /*
-    for (int j = 0; j < VIDEO_PIXELS * 4; j++) {
-        
-    }*/
-    //print frame//////////////////////////////////////////////////////////////////////////////////
+    //print frame
     video_cb(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH * 4);  //todo: 4=bytes_per_pixel -> const
+
     //log_cb(RETRO_LOG_INFO, "1: sleeping 0.5 secs\n");
-    //Sleep(1000); //windows and testing purposes only!!!
-    //get input////////////////////////////////////////////////////////////////////////////////////
-    //update_input();
+    Sleep(100); //windows and testing purposes only!!!
+    //sleep(1); //linux maybe?
+
+    //get userinput
+    //TODO: put all input stuff into update_input();
     input_poll_cb(); //port, device, index, id -> int16_t
+    int stepsize = 5;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP)) {
-        y_coord -= 10;
+        y_coord = ((int)y_coord-stepsize >= 0) ? y_coord - stepsize : 0;
+        if(y_coord > 10000){
+            log_cb(RETRO_LOG_ERROR, "Y fucked up, ?:; doesn't work\n");
+            exit(1);
+        }
     }
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) {
-        y_coord += 10;
+        y_coord = (y_coord+stepsize < VIDEO_HEIGHT) ? y_coord + stepsize : VIDEO_HEIGHT-1;
     }
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT)) {
-        x_coord -= 10;
+        x_coord = ((int)x_coord-stepsize >= 0) ? x_coord - stepsize : 0;
+        if(x_coord > 10000){
+            log_cb(RETRO_LOG_ERROR, "X fucked up, ?:; doesn't work\n");
+            exit(1);
+        }
     }
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) {
-        x_coord += 10;
+        x_coord = (x_coord+stepsize < VIDEO_WIDTH) ? x_coord + stepsize : VIDEO_WIDTH-1;
     }
 
-    //update frame/////////////////////////////////////////////////////////////////////////////////
-    //cleaning board:
+    //update video
+    //reset to blank background
     for (int j = 0; j < VIDEO_PIXELS * 4; j++) {
         if (j % 4 == 0)             //blue
             frame_buf[j] = 50;
@@ -395,19 +393,23 @@ void retro_run(void)
             frame_buf[j] = 15;
         else if ((j + 2) % 4 == 0)  //red
             frame_buf[j] = 75;
+        else   //(j + 1) % 4 == 0
+            frame_buf[j] = 0;       //nothing or transparency?
     }
+
     //x_coord = j % (VIDEO_WIDTH * 4)
     //y_coord = j / (VIDEO_WIDTH * 4)
-    // 
     // y = VIDEO_HEIGHT(384) / 2;
-    // y
-    // 
-    //draw square around xy
     log_cb(RETRO_LOG_INFO, "x:%d\ty:%d\n", x_coord, y_coord);
-    /*
-    for (int y = y_coord - 5; y <= y_coord + 5; y++) {
+    //log_cb(RETRO_LOG_INFO, "\ty_coord = %d\n\tx_coord = %d\n\n", y_coord, x_coord);
 
-        for (int x = x_coord - 5; x <= x_coord + 5; x = x + 2) {
+    double sprite_diameter = 10.0, radius = sprite_diameter/2;
+
+    //draw a square around point xy
+    /*
+    for (int y = y_coord - radius; y <= y_coord + radius; y++) {
+
+        for (int x = x_coord - radius; x <= x_coord + radius; x = x + 2) {
             if (!(x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT))
                 continue;
             int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
@@ -419,12 +421,13 @@ void retro_run(void)
         //fprintf(stderr, "\n");
     }
     */
-    //attempt at drawing a circle
-    log_cb(RETRO_LOG_INFO, "Trying to draw circle OwO:\n");
-    log_cb(RETRO_LOG_INFO, "\ty_coord = %d\n\tx_coord = %d\n\n", y_coord, x_coord);
-    double radius = 5;
-    for (int y = y_coord - radius; y <= y_coord + radius; y++) {
-        for (int x = x_coord - radius; x <= x_coord + radius; x++) {
+    
+    if(x_coord < 0 || y_coord < 0){
+        log_cb(RETRO_LOG_ERROR, "invalid x:%u and y:%u coords", x_coord, y_coord);
+    }
+    //draw a circle
+    for (unsigned y = (y_coord - radius < 0)?0:y_coord - radius; y <= y_coord + radius; y++) {
+        for (unsigned x = (x_coord - radius < 0)?0:x_coord - radius; x <= x_coord + radius; x++) {
 
             if ((x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT)) {
                 int x_dist_to_center = x_coord - x;
@@ -440,14 +443,17 @@ void retro_run(void)
                 }
             }
             else {
-                log_cb(RETRO_LOG_WARN, "circle out of bounds\n\tx = %d\ty = %d", x, y);
+                fprintf(stderr, "oob:%u|%u ", x, y); //circle pixel out of bounds: x|y
             }
         }
     }
 
+    //don't know what this does or what check_variables() is supposed to do
+    /*
     bool updated = false;
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
         check_variables();
+    */
 }
 
 /*
