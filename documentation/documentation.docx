@@ -1,0 +1,35 @@
+OVERVIEW of things to write 
+---
+readme
+    general overview of repository
+retroarch 
+    what is it + res 
+    installing res 
+    main features to use for the project 
+    settings  and logs 
+    loading a core 
+    (setup of retroarch/lakk/retropie on raspberry pi)
+libretro core development 
+    libretro.h 
+    skeletor 
+    get res 
+our core and libretro functions
+    link to res 
+    implemented functions 
+    every decision you made 
+how to compile 
+    cmake and terminal commands 
+    windows/linux 
+    .bat/.sh scripts 
+project files 
+    innolab project process 
+    project description 
+    project video 
+    sprint review protocols 
+    projekt ausblick 
+        preset cores for other languages
+        frame_buf as init as array of array
+        ausblick audio, core||game, game in c++ from scratch, optimization, arcade
+
+
+
