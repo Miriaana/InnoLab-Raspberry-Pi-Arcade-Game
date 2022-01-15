@@ -13,11 +13,12 @@
 #endif
 
 #include "libretro.h"
+#include "pong.h"
 
 //implement all necessary functions from libretro.h in here
 
-#define VIDEO_WIDTH 256
-#define VIDEO_HEIGHT 384
+#define VIDEO_WIDTH 384 //256
+#define VIDEO_HEIGHT 384 //384
 #define VIDEO_PIXELS VIDEO_WIDTH * VIDEO_HEIGHT
 
 static uint8_t* frame_buf;
@@ -48,6 +49,12 @@ static void fallback_log(enum retro_log_level level, const char* fmt, ...)
 static retro_environment_t environ_cb;
 
 //This function is called once, and gives the implementation a chance to initialize data structures.
+Ball ball(VIDEO_WIDTH/2, VIDEO_HEIGHT/2, 20);//pong
+Paddle paddleLeft(10, VIDEO_HEIGHT/2, 20,100);
+Paddle paddleRight(VIDEO_WIDTH-10, VIDEO_HEIGHT/2, 20,100);
+int scoreLeft = 0;
+int scoreRight = 0;
+
 void retro_init(void)
 {
     frame_buf = (uint8_t*)malloc(VIDEO_PIXELS * sizeof(uint32_t));             //allocates pixels for screen
@@ -56,6 +63,10 @@ void retro_init(void)
     {
         snprintf(retro_base_directory, sizeof(retro_base_directory), "%s", dir);   //saves directory path
     }
+    
+    ball.speedX = 5; // Giving the ball speed in x-axis //pong
+    srand (time(NULL));
+    ball.speedY = rand()%7-3; // Giving the ball speed in y-axis between -3 and 3
 }
 
 //This function should free all state that was initialized during retro_init(). 
@@ -349,43 +360,167 @@ such as soft-patching to work correctly.
 //as well as polling input, and querying current input state. 
 //The requirements for the callbacks are that video callback is called exactly once, i.e. it does not have to come last. 
 //Also, input polling must be called at least once.
+void score_display(){
+    if(scoreLeft == 0 && scoreRight == 0)
+        return;
+    
+    int score_size = 6;
+    int space_between = 2;
+    int space_up = 2;
+    int space_side = 2;
+    int xPos;
+    int points;
+
+    //draw seperator
+    for (int y = 0; y < 10; y++) {
+        int curr_pixel = y * VIDEO_WIDTH * 4 + VIDEO_WIDTH * 2;// -> VIDEO_WIDTH * 4 / 2
+        frame_buf[curr_pixel] = 150;//blue
+        frame_buf[++curr_pixel] = 150;//green
+        frame_buf[++curr_pixel] = 150;//red
+    }
+
+    //draw left score
+    points = scoreLeft;
+    xPos = VIDEO_WIDTH/2 - space_side - score_size;
+
+    while(points>0){
+        //draw 1 point
+        for (int y = space_up; y < space_up + score_size; y++) {
+            for (int x = xPos; x < xPos + score_size; x++) {
+                if (x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT){//just in case, but shouldn't be necessary
+                    int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
+                    frame_buf[curr_pixel] = 155;//blue
+                    frame_buf[++curr_pixel] = 220;//green
+                    frame_buf[++curr_pixel] = 235;//red
+                }
+            }
+        }
+        xPos = xPos - space_between - score_size;
+        points--;
+    }
+
+    //draw right score
+    points = scoreRight;
+    xPos = VIDEO_WIDTH/2 + space_side;
+
+    while(points>0){
+        //draw 1 point
+        for (int y = space_up; y < space_up + score_size; y++) {
+            for (int x = xPos; x < xPos + score_size; x++) {
+                if (x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT){//just in case, but shouldn't be necessary
+                    int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
+                    frame_buf[curr_pixel] = 155;//blue
+                    frame_buf[++curr_pixel] = 220;//green
+                    frame_buf[++curr_pixel] = 235;//red
+                }
+            }
+        }
+        xPos = xPos + space_between + score_size;
+        points--;
+    }
+}
 
 void retro_run(void)
 {
+
+    for (int j = 0; j < VIDEO_PIXELS * 4; j++) {//wipe display
+        frame_buf[j] = 50;
+    }
+    paddleLeft.display(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT);
+    paddleRight.display(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT);
+    ball.display(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT);
+    score_display();
+    
     //print frame
     video_cb(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH * 4);  //todo: 4=bytes_per_pixel -> const
 
     //log_cb(RETRO_LOG_INFO, "1: sleeping 0.5 secs\n");
-    Sleep(100); //windows and testing purposes only!!!
+    //Sleep(200); //windows and testing purposes only!!!
     //sleep(1); //linux maybe?
 
+    ball.move();
+    paddleRight.move();
+    paddleLeft.move();
+
+    //ball collision detection
+    if (ball.right() > VIDEO_WIDTH) {
+        scoreLeft++;
+        ball.x = VIDEO_WIDTH/2;
+        ball.y = VIDEO_HEIGHT/2;
+        ball.speedX = -ball.speedX;
+        ball.speedY = rand()%7-3; // Giving the ball speed in y-axis between -3 and 3
+    }
+    if (ball.left() < 0) {
+        scoreRight++;
+        ball.x = VIDEO_WIDTH/2;
+        ball.y = VIDEO_HEIGHT/2;
+        ball.speedX = -ball.speedX;
+        ball.speedY = rand()%7-3;
+    }
+    if (ball.bottom() > VIDEO_HEIGHT) {
+        ball.speedY = -ball.speedY;
+    }
+    if (ball.top() < 0) {
+        ball.speedY = -ball.speedY;
+    }
     //get userinput
     //TODO: put all input stuff into update_input();
+    
+    //int stepsize = 5;
     input_poll_cb(); //port, device, index, id -> int16_t
-    int stepsize = 5;
+
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP)) {
-        y_coord = ((int)y_coord-stepsize >= 0) ? y_coord - stepsize : 0;
-        if(y_coord > 10000){
-            log_cb(RETRO_LOG_ERROR, "Y fucked up, ?:; doesn't work\n");
-            exit(1);
-        }
+        paddleRight.speedY=-10;
     }
-    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) {
-        y_coord = (y_coord+stepsize < VIDEO_HEIGHT) ? y_coord + stepsize : VIDEO_HEIGHT-1;
+    else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) {
+        paddleRight.speedY=10;
+    }
+    else{
+        paddleRight.speedY=0;
     }
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT)) {
-        x_coord = ((int)x_coord-stepsize >= 0) ? x_coord - stepsize : 0;
-        if(x_coord > 10000){
-            log_cb(RETRO_LOG_ERROR, "X fucked up, ?:; doesn't work\n");
-            exit(1);
-        }
+        paddleLeft.speedY=-10;
     }
-    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) {
-        x_coord = (x_coord+stepsize < VIDEO_WIDTH) ? x_coord + stepsize : VIDEO_WIDTH-1;
+    else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) {
+        paddleLeft.speedY=10;
+    }
+    else{
+        paddleLeft.speedY=0;
+    }
+
+    //paddles collision detection
+    if (paddleLeft.bottom() > VIDEO_HEIGHT) {
+        paddleLeft.y = VIDEO_HEIGHT-paddleLeft.h/2;
+    }
+
+    if (paddleLeft.top() < 0) {
+        paddleLeft.y = paddleLeft.h/2;
+    }
+        
+    if (paddleRight.bottom() > VIDEO_HEIGHT) {
+        paddleRight.y = VIDEO_HEIGHT-paddleRight.h/2;
+    }
+
+    if (paddleRight.top() < 0) {
+        paddleRight.y = paddleRight.h/2;
+    }
+
+    // If the ball gets behind the paddle 
+    // AND if the ball is int he area of the paddle (between paddle top and bottom)
+    // bounce the ball to other direction
+
+    //left paddle
+    if ( ball.left() < paddleLeft.right() && ball.y > paddleLeft.top() && ball.y < paddleLeft.bottom() && ball.speedX < 0){
+        ball.speedX = -ball.speedX;
+    }
+    //right paddle
+    if ( ball.right() > paddleRight.left() && ball.y > paddleRight.top() && ball.y < paddleRight.bottom() && ball.speedX > 0) {
+        ball.speedX = -ball.speedX;
     }
 
     //update video
     //reset to blank background
+    /*
     for (int j = 0; j < VIDEO_PIXELS * 4; j++) {
         if (j % 4 == 0)             //blue
             frame_buf[j] = 50;
@@ -395,15 +530,15 @@ void retro_run(void)
             frame_buf[j] = 75;
         else   //(j + 1) % 4 == 0
             frame_buf[j] = 0;       //nothing or transparency?
-    }
+    }*/
 
     //x_coord = j % (VIDEO_WIDTH * 4)
     //y_coord = j / (VIDEO_WIDTH * 4)
     // y = VIDEO_HEIGHT(384) / 2;
-    log_cb(RETRO_LOG_INFO, "x:%d\ty:%d\n", x_coord, y_coord);
+    //log_cb(RETRO_LOG_INFO, "x:%d\ty:%d\n", x_coord, y_coord);
     //log_cb(RETRO_LOG_INFO, "\ty_coord = %d\n\tx_coord = %d\n\n", y_coord, x_coord);
 
-    double sprite_diameter = 10.0, radius = sprite_diameter/2;
+    //double sprite_diameter = 10.0, radius = sprite_diameter/2;
 
     //draw a square around point xy
     /*
@@ -422,10 +557,8 @@ void retro_run(void)
     }
     */
     
-    if(x_coord < 0 || y_coord < 0){
-        log_cb(RETRO_LOG_ERROR, "invalid x:%u and y:%u coords", x_coord, y_coord);
-    }
     //draw a circle
+    /*
     for (unsigned y = (y_coord - radius < 0)?0:y_coord - radius; y <= y_coord + radius; y++) {
         for (unsigned x = (x_coord - radius < 0)?0:x_coord - radius; x <= x_coord + radius; x++) {
 
@@ -446,7 +579,7 @@ void retro_run(void)
                 fprintf(stderr, "oob:%u|%u ", x, y); //circle pixel out of bounds: x|y
             }
         }
-    }
+    }*/
 
     //don't know what this does or what check_variables() is supposed to do
     /*
