@@ -6,7 +6,7 @@
 #include <string>
 #include <cmath> //#include <math.h>
 #include <thread>
-// #include <cstring>//for memset? no
+#include <cstring>//for memset
 
 #if defined(_WIN32) && !defined(_XBOX)
 #include <windows.h>
