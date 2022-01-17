@@ -97,17 +97,11 @@ void game_draw(uint8_t* frame_buf){
 }
 
 void game_run(){
-    printf("in game_run\n");
     
     ball.move();
-    printf("moved ball\n");
     paddleRight.move();
-    printf("moved right paddle\n");
     paddleLeft.move();
-    printf("moved left paddle\n");
 
-    
-    printf("attempting ball collision detection\n");
     //ball collision detection
     if (ball.right() > VIDEO_WIDTH) {
         scoreLeft++;
@@ -129,8 +123,7 @@ void game_run(){
     if (ball.top() < 0) {
         ball.speedY = -ball.speedY;
     }
-    printf("finished ball collision detection\n");
-    printf("attempting paddle collision detection\n");
+
     //paddles collision detection
     if (paddleLeft.bottom() > VIDEO_HEIGHT) {
         paddleLeft.y = VIDEO_HEIGHT-paddleLeft.h/2;
@@ -159,7 +152,6 @@ void game_run(){
     } else{
         paddleLeft.speedY=0;
     }
-    printf("finished paddle collision detection\n");
     // If the ball gets behind the paddle 
     // AND if the ball is int he area of the paddle (between paddle top and bottom)
     // AND the ball hasn't already bounced of
@@ -172,6 +164,5 @@ void game_run(){
     if ( ball.right() > paddleRight.left() && ball.y > paddleRight.top() && ball.y < paddleRight.bottom() && ball.speedX > 0) {
         ball.speedX = -ball.speedX;
     }
-    printf("finished game_run\n");
 }
 

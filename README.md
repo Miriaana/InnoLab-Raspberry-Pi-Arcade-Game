@@ -10,6 +10,7 @@ ubuntu:
 cmake -S . -B out/build/linux/
 make -C out/build/linux/
 cmake --install out/build/linux/ --config Debug --prefix "/home/miriam/.config/retroarch/downloads/"
+(cd ../../../.config/retroarch && exec retroarch --menu -v)
 
 
 compiling under windows in visual studio code
