@@ -1,3 +1,6 @@
+#ifndef PONG_H
+#define PONG_H
+
 #define _USE_MATH_DEFINES
 #include <stdio.h>
 #include <stdint.h>
@@ -52,3 +55,4 @@ public:
     float bottom();
 };
 
+#endif

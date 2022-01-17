@@ -1,25 +1,5 @@
-#define _USE_MATH_DEFINES
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string>
-#include <cmath> //#include <math.h>
-#include <thread>
-#include <cstring>//for memset
-
-#if defined(_WIN32) && !defined(_XBOX)
-#include <windows.h>
-#endif
-
-#include "libretro.h"
-#include "pong.h"
-
 //implement all necessary functions from libretro.h in here
-
-#define VIDEO_WIDTH 384 //256
-#define VIDEO_HEIGHT 384 //384
-#define VIDEO_PIXELS VIDEO_WIDTH * VIDEO_HEIGHT
+#include "core.h"
 
 static uint8_t* frame_buf;
 static struct retro_log_callback logging;
@@ -49,24 +29,19 @@ static void fallback_log(enum retro_log_level level, const char* fmt, ...)
 static retro_environment_t environ_cb;
 
 //This function is called once, and gives the implementation a chance to initialize data structures.
-Ball ball(VIDEO_WIDTH/2, VIDEO_HEIGHT/2, 20);//pong
-Paddle paddleLeft(10, VIDEO_HEIGHT/2, 20,100);
-Paddle paddleRight(VIDEO_WIDTH-10, VIDEO_HEIGHT/2, 20,100);
-int scoreLeft = 0;
-int scoreRight = 0;
-
 void retro_init(void)
 {
     frame_buf = (uint8_t*)malloc(VIDEO_PIXELS * sizeof(uint32_t));             //allocates pixels for screen
+    if(frame_buf == NULL){
+        printf("theres been a fatal error\n");
+    }
     const char* dir = NULL;
     if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
     {
         snprintf(retro_base_directory, sizeof(retro_base_directory), "%s", dir);   //saves directory path
     }
     
-    ball.speedX = 5; // Giving the ball speed in x-axis //pong
-    srand (time(NULL));
-    ball.speedY = rand()%7-3; // Giving the ball speed in y-axis between -3 and 3
+    
 }
 
 //This function should free all state that was initialized during retro_init(). 
@@ -95,8 +70,8 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 void retro_get_system_info(struct retro_system_info* info)
 {
     memset(info, 0, sizeof(*info));
-    info->library_name = "INNOCore"; //YC
-    info->library_version = "0.2";  //YC
+    info->library_name = "InnoLab_Core"; //YC
+    info->library_version = "Pong 2.0";  //YC
     info->need_fullpath = true;   //IDK, edit?
     info->valid_extensions = "";     //if you were to load any other files in your core, you should specify the allowed types
 }
@@ -145,7 +120,12 @@ void retro_set_environment(retro_environment_t cb)
         log_cb(RETRO_LOG_WARN, teststring.data());
     }
 
-    log_cb(RETRO_LOG_INFO, "Just a test, AFTER initializing log_cb o-o'\n");
+    if(frame_buf == NULL){
+        log_cb(RETRO_LOG_WARN, "oh no, frame_buf not happy'\n");
+    }else{
+        log_cb(RETRO_LOG_INFO, "all good on frame_buf front'\n");
+    }
+
 
     static const struct retro_controller_description controllers[] = {
        { "Nintendo DS", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0) },    //edit if you need keyboard or mouse
@@ -219,14 +199,15 @@ void retro_reset(void)
 {//todo: change vals to 0
     x_coord = VIDEO_WIDTH / 2;
     y_coord = VIDEO_HEIGHT / 2;
+    game_reset();
 }
 
 static void update_input(void)
 {
-    input_poll_cb();
+    //input_poll_cb();
     //int16_t <- port, device, index, id
-    int16_t result = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
-    log_cb(RETRO_LOG_INFO, "input result: %d\n", result);
+    //int16_t result = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
+    //log_cb(RETRO_LOG_INFO, "input result: %d\n", result);
     //teststring = __func__;
     //teststring += "(): test\n";
     //log_cb(RETRO_LOG_INFO, teststring.data());
@@ -279,9 +260,7 @@ bool retro_load_game(const struct retro_game_info* info)
     };
 
     if (environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc)) {
-        teststring = __func__;
-        teststring += "(): test: setting input descriptor worked\n";
-        log_cb(RETRO_LOG_INFO, teststring.data());
+
     }
     else
     {
@@ -306,31 +285,17 @@ bool retro_load_game(const struct retro_game_info* info)
 
     check_variables();   //does nothing so far
 
-    //initialize board color
-    /*
-    for (int j = 0; j < VIDEO_PIXELS * 4; j++) {
-        if (j % 4 == 0) {               //blue
-            frame_buf[j] = 250;
-        }
-        else if ((j + 3) % 4 == 0) {    //green
-            frame_buf[j] = 200;
-        }
-        else if ((j + 2) % 4 == 0) {    //red
-            frame_buf[j] = 100;
-        }
-        else if ((j + 1) % 4 == 0) {    //nothing
-
-        }
-    }*/
-
-    //init coordinate position
-    x_coord = VIDEO_WIDTH / 2;
-    y_coord = VIDEO_HEIGHT / 2;
-
     (void)info;
-    teststring = __func__;
-    teststring += "(): got to end of function\n";
-    log_cb(RETRO_LOG_INFO, teststring.data());
+
+    log_cb(RETRO_LOG_INFO, "game_init()\n");
+
+    game_init();
+
+    if(frame_buf == NULL){
+        log_cb(RETRO_LOG_WARN, "ah fuck\n");
+    }
+    log_cb(RETRO_LOG_INFO, "all good on frame_buf front'\n");
+    log_cb(RETRO_LOG_INFO, "SETUP COMPLETE\n");
     return true;
 }
 
@@ -360,229 +325,25 @@ such as soft-patching to work correctly.
 //as well as polling input, and querying current input state. 
 //The requirements for the callbacks are that video callback is called exactly once, i.e. it does not have to come last. 
 //Also, input polling must be called at least once.
-void score_display(){
-    if(scoreLeft == 0 && scoreRight == 0)
-        return;
-    
-    int score_size = 6;
-    int space_between = 2;
-    int space_up = 2;
-    int space_side = 2;
-    int xPos;
-    int points;
 
-    //draw seperator
-    for (int y = 0; y < 10; y++) {
-        int curr_pixel = y * VIDEO_WIDTH * 4 + VIDEO_WIDTH * 2;// -> VIDEO_WIDTH * 4 / 2
-        frame_buf[curr_pixel] = 150;//blue
-        frame_buf[++curr_pixel] = 150;//green
-        frame_buf[++curr_pixel] = 150;//red
-    }
-
-    //draw left score
-    points = scoreLeft;
-    xPos = VIDEO_WIDTH/2 - space_side - score_size;
-
-    while(points>0){
-        //draw 1 point
-        for (int y = space_up; y < space_up + score_size; y++) {
-            for (int x = xPos; x < xPos + score_size; x++) {
-                if (x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT){//just in case, but shouldn't be necessary
-                    int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
-                    frame_buf[curr_pixel] = 155;//blue
-                    frame_buf[++curr_pixel] = 220;//green
-                    frame_buf[++curr_pixel] = 235;//red
-                }
-            }
-        }
-        xPos = xPos - space_between - score_size;
-        points--;
-    }
-
-    //draw right score
-    points = scoreRight;
-    xPos = VIDEO_WIDTH/2 + space_side;
-
-    while(points>0){
-        //draw 1 point
-        for (int y = space_up; y < space_up + score_size; y++) {
-            for (int x = xPos; x < xPos + score_size; x++) {
-                if (x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT){//just in case, but shouldn't be necessary
-                    int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
-                    frame_buf[curr_pixel] = 155;//blue
-                    frame_buf[++curr_pixel] = 220;//green
-                    frame_buf[++curr_pixel] = 235;//red
-                }
-            }
-        }
-        xPos = xPos + space_between + score_size;
-        points--;
-    }
-}
 
 void retro_run(void)
 {
-
-    for (int j = 0; j < VIDEO_PIXELS * 4; j++) {//wipe display
-        frame_buf[j] = 50;
-    }
-    paddleLeft.display(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT);
-    paddleRight.display(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT);
-    ball.display(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT);
-    score_display();
-    
     //print frame
+    game_draw(frame_buf);
     video_cb(frame_buf, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH * 4);  //todo: 4=bytes_per_pixel -> const
 
-    //log_cb(RETRO_LOG_INFO, "1: sleeping 0.5 secs\n");
-    //Sleep(200); //windows and testing purposes only!!!
-    //sleep(1); //linux maybe?
-
-    ball.move();
-    paddleRight.move();
-    paddleLeft.move();
-
-    //ball collision detection
-    if (ball.right() > VIDEO_WIDTH) {
-        scoreLeft++;
-        ball.x = VIDEO_WIDTH/2;
-        ball.y = VIDEO_HEIGHT/2;
-        ball.speedX = -ball.speedX;
-        ball.speedY = rand()%7-3; // Giving the ball speed in y-axis between -3 and 3
-    }
-    if (ball.left() < 0) {
-        scoreRight++;
-        ball.x = VIDEO_WIDTH/2;
-        ball.y = VIDEO_HEIGHT/2;
-        ball.speedX = -ball.speedX;
-        ball.speedY = rand()%7-3;
-    }
-    if (ball.bottom() > VIDEO_HEIGHT) {
-        ball.speedY = -ball.speedY;
-    }
-    if (ball.top() < 0) {
-        ball.speedY = -ball.speedY;
-    }
-    //get userinput
-    //TODO: put all input stuff into update_input();
-    
-    //int stepsize = 5;
+    //get user input
     input_poll_cb(); //port, device, index, id -> int16_t
+    key_up = (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP)) ? true : false;
+    key_down = (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) ? true : false;
+    key_left = (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT)) ? true : false;
+    key_right = (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) ? true : false;
 
-    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP)) {
-        paddleRight.speedY=-10;
-    }
-    else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) {
-        paddleRight.speedY=10;
-    }
-    else{
-        paddleRight.speedY=0;
-    }
-    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT)) {
-        paddleLeft.speedY=-10;
-    }
-    else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) {
-        paddleLeft.speedY=10;
-    }
-    else{
-        paddleLeft.speedY=0;
-    }
-
-    //paddles collision detection
-    if (paddleLeft.bottom() > VIDEO_HEIGHT) {
-        paddleLeft.y = VIDEO_HEIGHT-paddleLeft.h/2;
-    }
-
-    if (paddleLeft.top() < 0) {
-        paddleLeft.y = paddleLeft.h/2;
-    }
-        
-    if (paddleRight.bottom() > VIDEO_HEIGHT) {
-        paddleRight.y = VIDEO_HEIGHT-paddleRight.h/2;
-    }
-
-    if (paddleRight.top() < 0) {
-        paddleRight.y = paddleRight.h/2;
-    }
-
-    // If the ball gets behind the paddle 
-    // AND if the ball is int he area of the paddle (between paddle top and bottom)
-    // bounce the ball to other direction
-
-    //left paddle
-    if ( ball.left() < paddleLeft.right() && ball.y > paddleLeft.top() && ball.y < paddleLeft.bottom() && ball.speedX < 0){
-        ball.speedX = -ball.speedX;
-    }
-    //right paddle
-    if ( ball.right() > paddleRight.left() && ball.y > paddleRight.top() && ball.y < paddleRight.bottom() && ball.speedX > 0) {
-        ball.speedX = -ball.speedX;
-    }
-
-    //update video
-    //reset to blank background
-    /*
-    for (int j = 0; j < VIDEO_PIXELS * 4; j++) {
-        if (j % 4 == 0)             //blue
-            frame_buf[j] = 50;
-        else if ((j + 3) % 4 == 0)  //green
-            frame_buf[j] = 15;
-        else if ((j + 2) % 4 == 0)  //red
-            frame_buf[j] = 75;
-        else   //(j + 1) % 4 == 0
-            frame_buf[j] = 0;       //nothing or transparency?
-    }*/
-
-    //x_coord = j % (VIDEO_WIDTH * 4)
-    //y_coord = j / (VIDEO_WIDTH * 4)
-    // y = VIDEO_HEIGHT(384) / 2;
-    //log_cb(RETRO_LOG_INFO, "x:%d\ty:%d\n", x_coord, y_coord);
-    //log_cb(RETRO_LOG_INFO, "\ty_coord = %d\n\tx_coord = %d\n\n", y_coord, x_coord);
-
-    //double sprite_diameter = 10.0, radius = sprite_diameter/2;
-
-    //draw a square around point xy
-    /*
-    for (int y = y_coord - radius; y <= y_coord + radius; y++) {
-
-        for (int x = x_coord - radius; x <= x_coord + radius; x = x + 2) {
-            if (!(x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT))
-                continue;
-            int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
-            //fprintf(stderr, "%d\t", curr_pixel);
-                frame_buf[curr_pixel] = 155;//blue
-                frame_buf[++curr_pixel] = 220;//green
-                frame_buf[++curr_pixel] = 235;//red
-        }
-        //fprintf(stderr, "\n");
-    }
-    */
+    //progess game
+    game_run();
     
-    //draw a circle
-    /*
-    for (unsigned y = (y_coord - radius < 0)?0:y_coord - radius; y <= y_coord + radius; y++) {
-        for (unsigned x = (x_coord - radius < 0)?0:x_coord - radius; x <= x_coord + radius; x++) {
-
-            if ((x >= 0 && x < VIDEO_WIDTH && y >= 0 && y < VIDEO_HEIGHT)) {
-                int x_dist_to_center = x_coord - x;
-                int y_dist_to_center = y_coord - y;
-                if (sqrt(pow(x_dist_to_center, 2) + pow(y_dist_to_center, 2)) <= radius + 0.3) {
-                    int curr_pixel = y * VIDEO_WIDTH * 4 + x * 4;
-                    //fprintf(stderr, "%d\t", curr_pixel);
-                    frame_buf[curr_pixel] = 155;//blue
-                    frame_buf[++curr_pixel] = 220;//green
-                    frame_buf[++curr_pixel] = 235;//red
-                }
-                else {
-                }
-            }
-            else {
-                fprintf(stderr, "oob:%u|%u ", x, y); //circle pixel out of bounds: x|y
-            }
-        }
-    }*/
-
-    //don't know what this does or what check_variables() is supposed to do
-    /*
+    /*//don't know what this does or what check_variables() is supposed to do
     bool updated = false;
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
         check_variables();
@@ -670,7 +431,7 @@ if the implementation succeeded in serializing or unserializing.
 //This should free any internal data related to the game, and allow retro_load_game() to be called again.
 void retro_unload_game(void)
 {
-
+    game_deinit();
 }
 
 

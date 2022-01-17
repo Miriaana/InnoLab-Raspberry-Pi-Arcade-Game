@@ -2,7 +2,7 @@
 
 # build commands
 cmake -S . -B out/build/windows/
-MSBuild.exe out/build/windows/INNOCore3.sln
+MSBuild.exe out/build/windows/InnoLab_Core.sln
 cmake --install out/build/windows/ --config Debug --prefix "C:/RetroArch-Win64/downloads/INNOCore"
 C:\RetroArch-Win64\retroarch --menu -v
 

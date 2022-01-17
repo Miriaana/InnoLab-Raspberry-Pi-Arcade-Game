@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 # add_executable (NAME "core.cpp" "libretro.h")
-add_library (Pong SHARED "core.cpp" "libretro.h" "pong.h" "pong.cpp")
+add_library (Pong SHARED "libretro.h" "core.h" "core.cpp" "game.h" "game.cpp" "pong.h" "pong.cpp")
 # add_library (Skeletor SHARED "skeletor.c" "libretro.h")
 
 # target_link_libraries(${PROJECT_NAME} libname)
