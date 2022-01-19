@@ -1,11 +1,13 @@
 # InnoLab-Raspberry-Pi-Arcade-Game
 
 # build commands
+the paths to install the files and open retroarch have of course be changed according to your own directory structure
+to make 
 ### windows in vscode:
 - configure cmake:  
 ``cmake -S . -B out/build/windows/``
 - build program (MSBuild has to be added to the PATH beforehand):  
-    ``MSBuild.exe out/build/windows/InnoLab_Core.sln``
+``MSBuild.exe out/build/windows/InnoLab_Core.sln``
 - install(copy) core to zB. retroarch core folder  
 ``cmake --install out/build/windows/ --config Debug --prefix "C:/RetroArch-Win64/downloads/INNOCore"``
 - open retroarch over commandline  
