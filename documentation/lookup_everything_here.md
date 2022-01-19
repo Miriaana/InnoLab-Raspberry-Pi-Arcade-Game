@@ -8,7 +8,8 @@
   - you load your own cores from mainMenu >> loadCore >> installOrRestoreACore  
     more on that under _**how to compile our core**_
   - you can rebind your keys to controlls under settings >> input  
-    useful since thus far in the project the left pong-paddle is played with the left- and right arrowkeys, you can rebind them to sth like [w] and [s]
+    useful since thus far in the project the left pong-paddle is played with the left- and right arrowkeys,  
+    you can rebind them to sth like [w] and [s]
   - for debugging it is useful to log messages to a console, you can turn this on under settings >> logging -> logging verbosity on  
     if this does not work, you can instead start retroarch from the retroarch folder with  
     retroarch --menu --verbose
