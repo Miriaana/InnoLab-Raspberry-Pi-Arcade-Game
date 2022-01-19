@@ -12,11 +12,10 @@
 ``C:\RetroArch-Win64\retroarch --menu -v``
 
 ### ubuntu:
-``
-$ cmake -S . -B out/build/linux/  
-$ make -C out/build/linux/  
-$ cmake --install out/build/linux/ --config Debug --prefix "/home/miriam/.config/retroarch/downloads/"  
-$ (cd ../../../.config/retroarch && exec retroarch --menu -v)  
-``
+$ ``cmake -S . -B out/build/linux/``  
+$ ``make -C out/build/linux/``  
+$ ``cmake --install out/build/linux/ --config Debug --prefix "/home/miriam/.config/retroarch/downloads/"``  
+$ ``(cd ../../../.config/retroarch && exec retroarch --menu -v)``  
+
 
 
